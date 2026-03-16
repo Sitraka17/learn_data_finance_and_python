@@ -1,136 +1,51 @@
----
-title: Advanced Python for Quantitative Finance
-description: Bridging quantitative finance, machine learning, and high-performance computing using Python.
-author: Sitraka Matthew FORLER
----
+The Python & Finance Learning Roadmap
+Phase 1: Python Fundamentals
+Before touching financial data, you need to understand the basic building blocks of the language.
 
-# Advanced Python for Quantitative Finance
+Variables & Data Types: Learn how to store strings, integers, floats, and booleans.
 
-Welcome to the advanced module. This section is designed for data professionals and financial engineers who want to move beyond basic data manipulation and explore high-performance computing, stochastic modeling, and Artificial Intelligence within financial markets.
+Data Structures: Master lists, dictionaries, and tuples to organize your data.
 
-<Callout type="warning">
-  **Prerequisites:** Familiarity with basic financial instruments, linear algebra, and intermediate Python (Pandas, NumPy) is assumed before starting this module.
-</Callout>
+Control Flow: Understand if/else statements, for loops, and while loops to control how your code runs.
 
----
+Functions: Practice writing reusable blocks of code to keep your scripts clean.
 
-## 1. High-Performance Quantitative Modeling
+Phase 2: Data Manipulation (The Core Toolset)
+Finance is all about data. These three libraries are the industry standard for handling it.
 
-In quantitative finance, execution speed and memory management are critical. We will transition from standard `pandas` workflows to high-performance libraries like `Polars`, and utilize `Numba` for Just-In-Time (JIT) compilation to accelerate heavy computations.
+NumPy: Used for high-performance mathematical operations and arrays.
 
-### Monte Carlo Simulations for Option Pricing
+Pandas: The most important library for finance. Learn to use DataFrames, handle missing data, and manipulate time-series data.
 
-When pricing complex derivatives where closed-form solutions don't exist, we rely on Monte Carlo simulations. This involves simulating thousands of potential price paths using Geometric Brownian Motion (GBM):
+Matplotlib & Seaborn: Essential for visualizing price trends, drawing charts, and plotting distributions.
 
-$$dS_t = \mu S_t dt + \sigma S_t dW_t$$
+Phase 3: Core Finance Concepts
+You need to know what you are calculating before you write the code to calculate it.
 
-Here is the fully optimized code using `NumPy` and `Numba` to simulate 100,000 price paths in milliseconds:
+Time Value of Money (TVM): Understand present value, future value, and compounding interest.
 
-```python
-import numpy as np
-import numba as nb
-import matplotlib.pyplot as plt
+Financial Statements: Learn how to read balance sheets, income statements, and cash flow statements.
 
-@nb.jit(nopython=True)
-def simulate_gbm(S0, mu, sigma, T, dt, paths):
-    """
-    Simulates asset price paths using Geometric Brownian Motion.
-    Optimized with Numba for high-performance execution.
-    """
-    steps = int(T / dt)
-    prices = np.zeros((paths, steps))
-    prices[:, 0] = S0
-    
-    for t in range(1, steps):
-        Z = np.random.standard_normal(paths)
-        prices[:, t] = prices[:, t-1] * np.exp((mu - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * Z)
-        
-    return prices
+Risk & Return: Master the math behind volatility, variance, and standard deviation.
 
-# Parameters
-S0 = 100.0      # Initial stock price
-mu = 0.05       # Expected return
-sigma = 0.2     # Volatility
-T = 1.0         # Time horizon (1 year)
-dt = 1/252      # Daily time steps
-paths = 100000  # Number of simulated paths
+Capital Asset Pricing Model (CAPM): Learn how to calculate the expected return of an asset based on its risk.
 
-# Execute simulation
-simulated_paths = simulate_gbm(S0, mu, sigma, T, dt, paths)
+Phase 4: Applied Python in Finance
+This is where you combine the programming skills with the financial knowledge.
 
-# Calculate European Call Option Price (Strike = 105)
-strike = 105.0
-payoffs = np.maximum(simulated_paths[:, -1] - strike, 0)
-option_price = np.exp(-mu * T) * np.mean(payoffs)
+Data Gathering: Use APIs like yfinance or Alpha Vantage to pull live and historical stock data.
 
-print(f"Estimated Call Option Price: ${option_price:.2f}")
-2. NLP & Alternative Data in Markets
-Modern financial strategies rely heavily on alternative data. Drawing from industry experience, we will explore how to extract alpha from unstructured text, such as central bank statements, earnings calls, and news sentiment.
+Time Series Analysis: Calculate moving averages, daily percentage returns, and cumulative returns.
 
-Financial Sentiment Analysis with FinBERT
-Using Hugging Face's transformers library, we can easily deploy FinBERT—a model specifically fine-tuned on financial text—to classify market sentiment.
+Portfolio Optimization: Code the math for Modern Portfolio Theory to find the optimal asset weightings (the Efficient Frontier).
 
-Python
-from transformers import pipeline
+Algorithmic Trading Basics: Build simple backtests for trading strategies, such as buying when a short-term moving average crosses above a long-term one.
 
-# Load the FinBERT pipeline
-finbert = pipeline("sentiment-analysis", model="ProsusAI/finbert")
+Capstone Projects
+The best way to learn is by building. Try completing these projects in order.
 
-# Analyze headlines or earnings call transcripts
-headlines = [
-    "Inflation rises unexpectedly, prompting fears of aggressive rate hikes.",
-    "Tech giant reports record-breaking Q3 earnings and raises forward guidance.",
-    "The company's revenue remained relatively flat year-over-year."
-]
+Build a Stock Screener: Write a script that downloads data for the S&P 500 and filters out stocks based on specific criteria like P/E ratio and trading volume.
 
-results = finbert(headlines)
+Create a Portfolio Tracker: Build a program that tracks a mock portfolio, calculating its daily performance and comparing it against a benchmark like the S&P 500.
 
-for text, result in zip(headlines, results):
-    print(f"Headline: {text}")
-    print(f"Sentiment: {result['label']} (Confidence: {result['score']:.4f})\n")
-<InfoBox title="Industry Application: Compliance & AML/KYC">
-Automating compliance and risk assessment using Advanced NLP drastically reduces operational overhead, mitigates human error in document parsing, and ensures strict adherence to regulatory standards like FGDL and IFRS 9.
-</InfoBox>
-
-3. Algorithmic Trading Infrastructure & MLOps
-A successful quantitative model is only as good as its deployment pipeline. Below is an example of how to orchestrate a daily model retraining pipeline using Apache Airflow.
-
-Python
-from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
-from datetime import datetime, timedelta
-
-default_args = {
-    'owner': 'quant_team',
-    'depends_on_past': False,
-    'start_date': datetime(2023, 1, 1),
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
-}
-
-def fetch_market_data():
-    print("Fetching daily market data...")
-    # Add API ingestion logic here
-
-def retrain_model():
-    print("Retraining predictive model...")
-    # Add model training logic here
-
-with DAG('daily_quant_pipeline', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
-    
-    task_fetch_data = PythonOperator(
-        task_id='fetch_market_data',
-        python_callable=fetch_market_data
-    )
-    
-    task_retrain = PythonOperator(
-        task_id='retrain_model',
-        python_callable=retrain_model
-    )
-    
-    # Define task dependencies
-    task_fetch_data >> task_retrain
-<NextSteps
-text="Start Chapter 1: Vectorization and Polars"
-link="/finance/chapter-1-polars"
-/>
+Design a Backtester: Write a Python script that takes historical stock data, applies a simple trading rule, and tells you how much money you would have made or lost.
