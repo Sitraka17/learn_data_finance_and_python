@@ -1,3 +1,136 @@
-# Advanced
+---
+title: Advanced Python for Quantitative Finance
+description: Bridging quantitative finance, machine learning, and high-performance computing using Python.
+author: Sitraka Matthew FORLER
+---
 
-This is the index page for the Advanced folder!
+# Advanced Python for Quantitative Finance
+
+Welcome to the advanced module. This section is designed for data professionals and financial engineers who want to move beyond basic data manipulation and explore high-performance computing, stochastic modeling, and Artificial Intelligence within financial markets.
+
+<Callout type="warning">
+  **Prerequisites:** Familiarity with basic financial instruments, linear algebra, and intermediate Python (Pandas, NumPy) is assumed before starting this module.
+</Callout>
+
+---
+
+## 1. High-Performance Quantitative Modeling
+
+In quantitative finance, execution speed and memory management are critical. We will transition from standard `pandas` workflows to high-performance libraries like `Polars`, and utilize `Numba` for Just-In-Time (JIT) compilation to accelerate heavy computations.
+
+### Monte Carlo Simulations for Option Pricing
+
+When pricing complex derivatives where closed-form solutions don't exist, we rely on Monte Carlo simulations. This involves simulating thousands of potential price paths using Geometric Brownian Motion (GBM):
+
+$$dS_t = \mu S_t dt + \sigma S_t dW_t$$
+
+Here is the fully optimized code using `NumPy` and `Numba` to simulate 100,000 price paths in milliseconds:
+
+```python
+import numpy as np
+import numba as nb
+import matplotlib.pyplot as plt
+
+@nb.jit(nopython=True)
+def simulate_gbm(S0, mu, sigma, T, dt, paths):
+    """
+    Simulates asset price paths using Geometric Brownian Motion.
+    Optimized with Numba for high-performance execution.
+    """
+    steps = int(T / dt)
+    prices = np.zeros((paths, steps))
+    prices[:, 0] = S0
+    
+    for t in range(1, steps):
+        Z = np.random.standard_normal(paths)
+        prices[:, t] = prices[:, t-1] * np.exp((mu - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * Z)
+        
+    return prices
+
+# Parameters
+S0 = 100.0      # Initial stock price
+mu = 0.05       # Expected return
+sigma = 0.2     # Volatility
+T = 1.0         # Time horizon (1 year)
+dt = 1/252      # Daily time steps
+paths = 100000  # Number of simulated paths
+
+# Execute simulation
+simulated_paths = simulate_gbm(S0, mu, sigma, T, dt, paths)
+
+# Calculate European Call Option Price (Strike = 105)
+strike = 105.0
+payoffs = np.maximum(simulated_paths[:, -1] - strike, 0)
+option_price = np.exp(-mu * T) * np.mean(payoffs)
+
+print(f"Estimated Call Option Price: ${option_price:.2f}")
+2. NLP & Alternative Data in Markets
+Modern financial strategies rely heavily on alternative data. Drawing from industry experience, we will explore how to extract alpha from unstructured text, such as central bank statements, earnings calls, and news sentiment.
+
+Financial Sentiment Analysis with FinBERT
+Using Hugging Face's transformers library, we can easily deploy FinBERT—a model specifically fine-tuned on financial text—to classify market sentiment.
+
+Python
+from transformers import pipeline
+
+# Load the FinBERT pipeline
+finbert = pipeline("sentiment-analysis", model="ProsusAI/finbert")
+
+# Analyze headlines or earnings call transcripts
+headlines = [
+    "Inflation rises unexpectedly, prompting fears of aggressive rate hikes.",
+    "Tech giant reports record-breaking Q3 earnings and raises forward guidance.",
+    "The company's revenue remained relatively flat year-over-year."
+]
+
+results = finbert(headlines)
+
+for text, result in zip(headlines, results):
+    print(f"Headline: {text}")
+    print(f"Sentiment: {result['label']} (Confidence: {result['score']:.4f})\n")
+<InfoBox title="Industry Application: Compliance & AML/KYC">
+Automating compliance and risk assessment using Advanced NLP drastically reduces operational overhead, mitigates human error in document parsing, and ensures strict adherence to regulatory standards like FGDL and IFRS 9.
+</InfoBox>
+
+3. Algorithmic Trading Infrastructure & MLOps
+A successful quantitative model is only as good as its deployment pipeline. Below is an example of how to orchestrate a daily model retraining pipeline using Apache Airflow.
+
+Python
+from airflow import DAG
+from airflow.operators.python_operator import PythonOperator
+from datetime import datetime, timedelta
+
+default_args = {
+    'owner': 'quant_team',
+    'depends_on_past': False,
+    'start_date': datetime(2023, 1, 1),
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
+def fetch_market_data():
+    print("Fetching daily market data...")
+    # Add API ingestion logic here
+
+def retrain_model():
+    print("Retraining predictive model...")
+    # Add model training logic here
+
+with DAG('daily_quant_pipeline', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
+    
+    task_fetch_data = PythonOperator(
+        task_id='fetch_market_data',
+        python_callable=fetch_market_data
+    )
+    
+    task_retrain = PythonOperator(
+        task_id='retrain_model',
+        python_callable=retrain_model
+    )
+    
+    # Define task dependencies
+    task_fetch_data >> task_retrain
+<NextSteps
+text="Start Chapter 1: Vectorization and Polars"
+link="/finance/chapter-1-polars"
+/>
