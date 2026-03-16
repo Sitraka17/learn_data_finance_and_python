@@ -1,60 +1,530 @@
-Step 1: Install the Required Libraries
-Before you run anything, you need to install the tools. Open your terminal or command prompt and run this:
+# 🐍📈 Python for Finance — Complete Course
 
-Bash
-pip install yfinance pandas matplotlib
-Step 2: The Python Code
-Copy and paste this into your Python editor (like VS Code, PyCharm, or Jupyter Notebook).
+> A structured, practical course for using Python in financial analysis, quantitative modeling, and algorithmic trading.
 
-Python
-import yfinance as yf
+---
+
+## 📚 Table of Contents
+
+1. [Module 1 — Python Fundamentals for Finance](#module-1)
+2. [Module 2 — Data Manipulation with Pandas](#module-2)
+3. [Module 3 — Financial Data Acquisition](#module-3)
+4. [Module 4 — Financial Mathematics & Statistics](#module-4)
+5. [Module 5 — Portfolio Analysis](#module-5)
+6. [Module 6 — Risk Management](#module-6)
+7. [Module 7 — Options & Derivatives Pricing](#module-7)
+8. [Module 8 — Algorithmic Trading](#module-8)
+9. [Module 9 — Machine Learning in Finance](#module-9)
+10. [Module 10 — Capstone Project](#module-10)
+
+---
+
+## Module 1 — Python Fundamentals for Finance <a name="module-1"></a>
+
+### 🎯 Learning Objectives
+- Set up a Python environment for financial analysis
+- Understand core data types used in finance
+- Write clean, readable financial scripts
+
+### 1.1 Environment Setup
+
+```bash
+pip install numpy pandas matplotlib yfinance scipy statsmodels scikit-learn
+```
+
+**Recommended tools:** Jupyter Notebook / VS Code / Anaconda
+
+### 1.2 Core Data Types
+
+```python
+price = 142.56
+shares = 100
+position_value = price * shares  # 14256.0
+
+ticker = "AAPL"
+portfolio = ["AAPL", "MSFT", "GOOGL", "AMZN"]
+prices = {"AAPL": 142.56, "MSFT": 310.20, "GOOGL": 2750.00}
+```
+
+### 1.3 Control Flow & Functions
+
+```python
+def simple_return(buy_price: float, sell_price: float) -> float:
+    return (sell_price - buy_price) / buy_price
+
+def classify_return(r: float) -> str:
+    if r > 0.05:   return "Strong Gain"
+    elif r > 0:    return "Modest Gain"
+    elif r == 0:   return "Flat"
+    else:          return "Loss"
+
+r = simple_return(100, 112)
+print(f"Return: {r:.2%} → {classify_return(r)}")
+# Return: 12.00% → Strong Gain
+```
+
+### 📝 Exercises
+1. Write a function that converts annualized returns to monthly returns.
+2. Build a dictionary of 5 stocks with P/E ratios and filter those below 20.
+
+---
+
+## Module 2 — Data Manipulation with Pandas <a name="module-2"></a>
+
+### 🎯 Learning Objectives
+- Load, clean, and transform financial data
+- Perform time-series operations
+- Calculate rolling statistics
+
+### 2.1 Working with DataFrames
+
+```python
 import pandas as pd
+
+data = {
+    "Date": pd.date_range("2024-01-01", periods=5, freq="B"),
+    "AAPL": [185.2, 186.4, 184.9, 187.1, 188.5],
+    "MSFT": [374.0, 375.5, 373.8, 376.2, 378.0],
+}
+df = pd.DataFrame(data).set_index("Date")
+```
+
+### 2.2 Returns Calculation
+
+```python
+import numpy as np
+
+returns     = df.pct_change().dropna()                   # Simple returns
+log_returns = np.log(df / df.shift(1)).dropna()          # Log returns
+cumulative  = (1 + returns).cumprod() - 1                # Cumulative returns
+```
+
+### 2.3 Rolling Statistics
+
+```python
+rolling_mean = df["AAPL"].rolling(window=20).mean()
+rolling_std  = df["AAPL"].rolling(window=20).std()
+upper_band   = rolling_mean + 2 * rolling_std
+lower_band   = rolling_mean - 2 * rolling_std
+```
+
+### 2.4 Resampling
+
+```python
+monthly = df["AAPL"].resample("ME").ohlc()
+```
+
+### 📝 Exercises
+1. Load a CSV of historical prices and compute the 50-day and 200-day moving averages.
+2. Identify all Golden Cross dates (50d MA crosses above 200d MA).
+
+---
+
+## Module 3 — Financial Data Acquisition <a name="module-3"></a>
+
+### 🎯 Learning Objectives
+- Pull live and historical market data
+- Work with financial APIs
+- Handle missing data and corporate actions
+
+### 3.1 Yahoo Finance with `yfinance`
+
+```python
+import yfinance as yf
+
+aapl = yf.download("AAPL", start="2019-01-01", end="2024-01-01")
+
+ticker = yf.Ticker("AAPL")
+print(ticker.info["trailingPE"])
+print(ticker.financials)
+print(ticker.balance_sheet)
+print(ticker.cashflow)
+```
+
+### 3.2 Multi-Asset Download
+
+```python
+tickers = ["AAPL", "MSFT", "GOOGL", "AMZN", "META"]
+data = yf.download(tickers, start="2020-01-01", end="2024-01-01")["Adj Close"]
+```
+
+### 3.3 Adjusted Prices & Dividends
+
+```python
+adj_close = aapl["Adj Close"]   # Adjusts for splits and dividends
+dividends = ticker.dividends
+```
+
+### 📝 Exercises
+1. Download S&P 500 data and calculate annualized volatility per year since 2015.
+2. Compare adjusted vs. unadjusted close price for a stock with a recent split.
+
+---
+
+## Module 4 — Financial Mathematics & Statistics <a name="module-4"></a>
+
+### 🎯 Learning Objectives
+- Apply core statistical concepts to finance
+- Understand return distributions
+- Compute key financial metrics
+
+### 4.1 Descriptive Statistics
+
+```python
+from scipy import stats
+
+returns = log_returns["AAPL"]
+
+print(f"Mean Daily Return : {returns.mean():.4%}")
+print(f"Annualized Return : {returns.mean() * 252:.2%}")
+print(f"Annualized Vol    : {returns.std() * np.sqrt(252):.2%}")
+print(f"Skewness          : {stats.skew(returns):.4f}")
+print(f"Kurtosis          : {stats.kurtosis(returns):.4f}")
+```
+
+### 4.2 Sharpe Ratio
+
+```python
+def sharpe_ratio(returns: pd.Series, risk_free_rate: float = 0.05) -> float:
+    excess = returns - risk_free_rate / 252
+    return (excess.mean() / excess.std()) * np.sqrt(252)
+```
+
+### 4.3 Value at Risk (VaR) & CVaR
+
+```python
+def var_historical(returns, confidence=0.95):
+    return returns.quantile(1 - confidence)
+
+def cvar(returns, confidence=0.95):
+    v = var_historical(returns, confidence)
+    return returns[returns <= v].mean()
+
+print(f"VaR  (95%): {var_historical(returns):.4%}")
+print(f"CVaR (95%): {cvar(returns):.4%}")
+```
+
+### 4.4 Time Value of Money
+
+```python
+def npv(rate, cash_flows):
+    return sum(cf / (1 + rate)**t for t, cf in enumerate(cash_flows))
+
+def irr(cash_flows):
+    from scipy.optimize import brentq
+    return brentq(lambda r: npv(r, cash_flows), -0.999, 10)
+```
+
+### 📝 Exercises
+1. Compute rolling 30-day Sharpe ratio and plot it.
+2. Monte Carlo simulation of 10,000 stock price paths over 1 year.
+
+---
+
+## Module 5 — Portfolio Analysis <a name="module-5"></a>
+
+### 🎯 Learning Objectives
+- Construct and evaluate multi-asset portfolios
+- Understand Modern Portfolio Theory (MPT)
+- Perform mean-variance optimization
+
+### 5.1 Portfolio Metrics
+
+```python
+weights    = np.array([0.25, 0.25, 0.25, 0.25])
+cov_matrix = log_returns.cov() * 252
+
+port_return = np.dot(weights, log_returns.mean()) * 252
+port_vol    = np.sqrt(weights.T @ cov_matrix @ weights)
+
+print(f"Expected Annual Return : {port_return:.2%}")
+print(f"Annual Volatility      : {port_vol:.2%}")
+print(f"Sharpe Ratio           : {port_return / port_vol:.2f}")
+```
+
+### 5.2 Efficient Frontier (Monte Carlo)
+
+```python
 import matplotlib.pyplot as plt
 
-# 1. Define the asset and grab the data
-ticker = "AAPL" # Apple's stock ticker
-print(f"Fetching real-time historical data for {ticker}...")
+n_portfolios = 10_000
+results = np.zeros((3, n_portfolios))
 
-# Download the last 2 years of daily stock prices
-stock_data = yf.download(ticker, period="2y")
+for i in range(n_portfolios):
+    w = np.random.dirichlet(np.ones(len(tickers)))
+    r = np.dot(w, log_returns.mean()) * 252
+    v = np.sqrt(w.T @ cov_matrix @ w)
+    results[:, i] = [v, r, r / v]
 
-# 2. Core Financial Math: Returns and Moving Averages
-# Calculate daily percentage returns (How much it went up/down each day)
-stock_data['Daily Return'] = stock_data['Close'].pct_change()
+plt.scatter(results[0], results[1], c=results[2], cmap="viridis", alpha=0.4, s=5)
+plt.colorbar(label="Sharpe Ratio")
+plt.xlabel("Volatility"); plt.ylabel("Return")
+plt.title("Efficient Frontier"); plt.show()
+```
 
-# Calculate the 50-day and 200-day Simple Moving Averages (SMA)
-# This is a classic indicator used in algorithmic trading
-stock_data['SMA_50'] = stock_data['Close'].rolling(window=50).mean()
-stock_data['SMA_200'] = stock_data['Close'].rolling(window=200).mean()
+### 5.3 Optimal Portfolio (SciPy)
 
-# Clean up empty data created by the rolling averages
-stock_data.dropna(inplace=True)
+```python
+from scipy.optimize import minimize
 
-# 3. Output some basic quantitative stats
-print("\n--- Quick Quantitative Stats ---")
-print(f"Average Daily Return: {stock_data['Daily Return'].mean():.4f}")
-print(f"Daily Volatility (Risk): {stock_data['Daily Return'].std():.4f}")
+def neg_sharpe(w, mu, cov):
+    return -(np.dot(w, mu)) / np.sqrt(w.T @ cov @ w)
 
-# 4. Visualize the data like a pro
-plt.figure(figsize=(12, 6))
+n = len(tickers)
+result = minimize(neg_sharpe, np.ones(n)/n,
+                  args=(log_returns.mean()*252, cov_matrix),
+                  method="SLSQP",
+                  bounds=[(0,1)]*n,
+                  constraints={"type":"eq","fun": lambda w: w.sum()-1})
 
-# Plot the actual closing price
-plt.plot(stock_data.index, stock_data['Close'], label=f'{ticker} Close Price', color='blue', alpha=0.5)
+print(dict(zip(tickers, result.x.round(4))))
+```
 
-# Plot the moving averages
-plt.plot(stock_data.index, stock_data['SMA_50'], label='50-Day SMA', color='orange', linewidth=2)
-plt.plot(stock_data.index, stock_data['SMA_200'], label='200-Day SMA', color='red', linewidth=2)
+### 📝 Exercises
+1. Add short-selling constraints and compare the frontier.
+2. Plot the Capital Market Line (CML) with a 4.5% risk-free rate.
 
-# Formatting the chart
-plt.title(f'{ticker} - Price & Moving Averages')
-plt.xlabel('Date')
-plt.ylabel('Price (USD)')
-plt.legend()
-plt.grid(True)
-plt.show()
-Why This Code Matters (The Breakdown)
-yfinance: This is your free data pipeline. Instead of paying for Bloomberg terminals, this pulls data straight from Yahoo Finance.
+---
 
-.pct_change(): This is Pandas doing the heavy lifting. In one line of code, it calculates the daily returns for the entire two-year dataset.
+## Module 6 — Risk Management <a name="module-6"></a>
 
-.rolling(window=50).mean(): This calculates the Moving Average. Quants use this to smooth out daily price noise and spot actual trends. When a 50-day SMA crosses above a 200-day SMA, it's called a "Golden Cross" (a bullish trading signal).
+### 🎯 Learning Objectives
+- Measure downside risk beyond volatility
+- Analyze drawdowns
+- Compute Beta and stress-test portfolios
+
+### 6.1 Maximum Drawdown
+
+```python
+def max_drawdown(prices: pd.Series) -> float:
+    roll_max = prices.cummax()
+    return ((prices - roll_max) / roll_max).min()
+
+print(f"Max Drawdown: {max_drawdown(aapl['Adj Close']):.2%}")
+```
+
+### 6.2 Beta & Correlation
+
+```python
+spy = yf.download("SPY", start="2020-01-01", end="2024-01-01")["Adj Close"]
+spy_ret = np.log(spy / spy.shift(1)).dropna()
+
+beta = np.cov(returns.dropna(), spy_ret)[0][1] / spy_ret.var()
+print(f"Beta vs S&P 500: {beta:.2f}")
+```
+
+### 6.3 Stress Testing
+
+```python
+# Apply a historical shock (e.g., -40% crash scenario)
+shock = -0.40
+stressed_value = portfolio_value * (1 + shock)
+print(f"Portfolio after stress: ${stressed_value:,.0f}")
+```
+
+### 📝 Exercises
+1. Apply 2008 GFC daily returns to your current portfolio weights.
+2. Compute rolling 60-day beta for a tech stock vs. Nasdaq.
+
+---
+
+## Module 7 — Options & Derivatives Pricing <a name="module-7"></a>
+
+### 🎯 Learning Objectives
+- Understand options fundamentals
+- Implement the Black-Scholes model
+- Compute the Greeks
+
+### 7.1 Black-Scholes Model
+
+```python
+from scipy.stats import norm
+
+def black_scholes(S, K, T, r, sigma, option_type="call"):
+    d1 = (np.log(S/K) + (r + 0.5*sigma**2)*T) / (sigma*np.sqrt(T))
+    d2 = d1 - sigma*np.sqrt(T)
+    if option_type == "call":
+        return S*norm.cdf(d1) - K*np.exp(-r*T)*norm.cdf(d2)
+    return K*np.exp(-r*T)*norm.cdf(-d2) - S*norm.cdf(-d1)
+
+print(f"Call: ${black_scholes(150, 155, 0.5, 0.05, 0.25):.2f}")
+```
+
+### 7.2 The Greeks
+
+```python
+def greeks(S, K, T, r, sigma):
+    d1 = (np.log(S/K) + (r + 0.5*sigma**2)*T) / (sigma*np.sqrt(T))
+    d2 = d1 - sigma*np.sqrt(T)
+    return {
+        "delta": norm.cdf(d1),
+        "gamma": norm.pdf(d1) / (S * sigma * np.sqrt(T)),
+        "vega" : S * norm.pdf(d1) * np.sqrt(T) / 100,
+        "theta": (-(S*norm.pdf(d1)*sigma)/(2*np.sqrt(T))
+                  - r*K*np.exp(-r*T)*norm.cdf(d2)) / 365,
+        "rho"  : K*T*np.exp(-r*T)*norm.cdf(d2)/100,
+    }
+```
+
+### 📝 Exercises
+1. Plot option price vs. stock price for various strikes.
+2. Build a P&L diagram for a bull call spread.
+
+---
+
+## Module 8 — Algorithmic Trading <a name="module-8"></a>
+
+### 🎯 Learning Objectives
+- Build and backtest trading strategies
+- Implement technical indicators
+- Evaluate strategy performance rigorously
+
+### 8.1 Moving Average Crossover
+
+```python
+def ma_crossover_strategy(prices, short=50, long=200):
+    df = pd.DataFrame({"price": prices})
+    df["SMA_short"] = df["price"].rolling(short).mean()
+    df["SMA_long"]  = df["price"].rolling(long).mean()
+    df["signal"]    = np.where(df["SMA_short"] > df["SMA_long"], 1, -1)
+    df["position"]  = df["signal"].shift(1)   # No look-ahead bias
+    df["returns"]   = df["price"].pct_change()
+    df["strategy"]  = df["position"] * df["returns"]
+    return df
+```
+
+### 8.2 Performance Metrics
+
+```python
+def backtest_metrics(df):
+    s = df["strategy"].dropna()
+    b = df["returns"].dropna()
+    return {
+        "Total Return"     : f"{(1+s).prod()-1:.2%}",
+        "Benchmark Return" : f"{(1+b).prod()-1:.2%}",
+        "Sharpe Ratio"     : f"{s.mean()/s.std()*np.sqrt(252):.2f}",
+        "Max Drawdown"     : f"{max_drawdown((1+s).cumprod()):.2%}",
+        "Win Rate"         : f"{(s>0).mean():.2%}",
+    }
+```
+
+### 8.3 RSI Indicator
+
+```python
+def rsi(prices, period=14):
+    delta = prices.diff()
+    gain  = delta.clip(lower=0).rolling(period).mean()
+    loss  = (-delta.clip(upper=0)).rolling(period).mean()
+    return 100 - (100 / (1 + gain / loss))
+```
+
+### 📝 Exercises
+1. Add 0.1% transaction cost per trade to the backtest.
+2. Implement a Bollinger Band mean-reversion strategy.
+
+---
+
+## Module 9 — Machine Learning in Finance <a name="module-9"></a>
+
+### 🎯 Learning Objectives
+- Engineer financial features
+- Train ML models for return prediction
+- Avoid overfitting and data leakage
+
+### 9.1 Feature Engineering
+
+```python
+def build_features(df):
+    f = pd.DataFrame(index=df.index)
+    f["ret_1d"]    = df["Adj Close"].pct_change(1)
+    f["ret_5d"]    = df["Adj Close"].pct_change(5)
+    f["ret_20d"]   = df["Adj Close"].pct_change(20)
+    f["vol_20d"]   = f["ret_1d"].rolling(20).std()
+    f["rsi_14"]    = rsi(df["Adj Close"])
+    f["sma_ratio"] = df["Adj Close"] / df["Adj Close"].rolling(50).mean()
+    f["target"]    = np.sign(f["ret_1d"].shift(-1))  # Next-day direction
+    return f.dropna()
+```
+
+### 9.2 Walk-Forward Validation
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+
+features = build_features(aapl)
+X = features.drop("target", axis=1)
+y = features["target"]
+
+split = int(len(X) * 0.8)                  # Temporal split — never shuffle!
+X_train, X_test = X.iloc[:split], X.iloc[split:]
+y_train, y_test = y.iloc[:split], y.iloc[split:]
+
+model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+model.fit(X_train, y_train)
+print(classification_report(y_test, model.predict(X_test)))
+```
+
+### 9.3 Common Pitfalls
+
+| ❌ Mistake | ✅ Correct Approach |
+|-----------|-------------------|
+| Random shuffle on time-series | Temporal / walk-forward split |
+| Scale on full dataset | Fit scaler only on training set |
+| Future data in features | Shift target variable correctly |
+| Optimize hyperparameters on test | Use a separate validation window |
+
+### 📝 Exercises
+1. Implement a rolling walk-forward loop with 6-month windows.
+2. Compare Random Forest, Gradient Boosting, and Logistic Regression.
+
+---
+
+## Module 10 — Capstone Project <a name="module-10"></a>
+
+### Option A — Smart Portfolio Builder
+Build a Streamlit dashboard that downloads user-defined stocks, computes the optimal Sharpe portfolio, visualizes the efficient frontier, and tracks monthly performance vs. a benchmark.
+
+### Option B — Options Analytics Tool
+Build an options pricing tool that fetches live option chains, prices calls/puts via Black-Scholes, computes implied volatility via Newton-Raphson, and visualizes the volatility surface.
+
+### Option C — Backtesting Engine
+Build a strategy framework supporting multiple plugins (MA crossover, RSI, mean-reversion) with transaction costs, slippage, and a full performance tearsheet.
+
+### 📦 Deliverables
+- Clean Python codebase (modules, docstrings, type hints)
+- Jupyter Notebook with full analysis
+- 1-page results summary
+
+---
+
+## 📖 Recommended Resources
+
+| Resource | Type |
+|---------|------|
+| *Python for Finance* — Yves Hilpisch | Book (O'Reilly) |
+| *Quantitative Finance with Python* — Chris Kelliher | Book (Wiley) |
+| QuantLib Python | Library |
+| Zipline / Backtrader | Backtesting Framework |
+| QuantConnect / Alpaca | Live Trading Platform |
+| SSRN & arXiv q-fin | Research Papers |
+
+---
+
+## 🧰 Key Libraries at a Glance
+
+| Library | Purpose |
+|---------|---------|
+| `numpy` | Numerical computing, matrix ops |
+| `pandas` | Data manipulation, time series |
+| `matplotlib` / `seaborn` | Visualization |
+| `yfinance` | Market data download |
+| `scipy` | Statistics, optimization |
+| `statsmodels` | Econometrics, regression |
+| `scikit-learn` | Machine learning |
+| `streamlit` | Interactive dashboards |
+| `QuantLib` | Derivatives pricing |
+
+---
+
+*Happy coding and profitable trading! 🚀*
